@@ -1,1 +1,91 @@
-#include <windows.h>\n#include <commctrl.h>\n#include <iostream>\n\nLRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {\n    switch (uMsg) {\n    case WM_DESTROY:\n        PostQuitMessage(0);\n        return 0;\n    case WM_COMMAND:\n        if (wParam == 1) {\n            // Open File\n            OPENFILENAME ofn;\n            CHAR szFile[260];\n            ZeroMemory(&ofn, sizeof(ofn));\n            ofn.lStructSize = sizeof(ofn);\n            ofn.lpstrFile = szFile;\n            ofn.lpstrFile[0] = '\0';\n            ofn.nMaxFile = sizeof(szFile);\n            ofn.lpstrFilter = "Text Files (*.txt)\0*.txt\0All Files (*.*)\0*.*\0";\n            ofn.lpstrTitle = "Open File";\n            ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;\n\n            if (GetOpenFileName(&ofn)) {\n                // Load the file into a text area (add your logic here)\n            }\n        } else if (wParam == 2) {\n            // Save File\n            // Your save logic here\n        }\n        return 0;\n    }\n    return DefWindowProc(hwnd, uMsg, wParam, lParam);\n}\n\nint WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {\n    const char CLASS_NAME[] = "Sample Notepad";\n\n    WNDCLASS wc = {};\n    wc.lpfnWndProc = WindowProc;\n    wc.hInstance = hInstance;\n    wc.lpszClassName = CLASS_NAME;\n\n    RegisterClass(&wc);\n    HWND hwnd = CreateWindowEx(0, CLASS_NAME, "Notepad", WS_OVERLAPPEDWINDOW,\n        CW_USEDEFAULT, CW_USEDEFAULT, 500, 500, nullptr, nullptr, hInstance, nullptr);\n\n    ShowWindow(hwnd, nCmdShow);\n\n    // Message loop\n    MSG msg;\n    while (GetMessage(&msg, nullptr, 0, 0)) {\n        TranslateMessage(&msg);\n        DispatchMessage(&msg);\n    }\n\n    return 0;\n}
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <stdexcept>
+
+class Notepad {
+public:
+    Notepad() {
+        // Initialize the notepad
+    }
+
+    void run() {
+        while (true) {
+            displayMenu();
+            int choice;
+            std::cin >> choice;
+            handleUserChoice(choice);
+        }
+    }
+
+private:
+    void displayMenu() {
+        std::cout << "--- Notepad Menu ---" << std::endl;
+        std::cout << "1. Create New File" << std::endl;
+        std::cout << "2. Open Existing File" << std::endl;
+        std::cout << "3. Exit" << std::endl;
+        std::cout << "Choose an option: ";
+    }
+
+    void handleUserChoice(int choice) {
+        switch (choice) {
+            case 1:
+                createFile();
+                break;
+            case 2:
+                openFile();
+                break;
+            case 3:
+                exit(0);
+            default:
+                std::cout << "Invalid option. Please try again." << std::endl;
+        }
+    }
+
+    void createFile() {
+        std::string filename;
+        std::cout << "Enter the name of the file to create: ";
+        std::cin >> filename;
+        std::ofstream outfile(filename);
+        if (!outfile) {
+            std::cerr << "Error creating file: " << filename << std::endl;
+            return;
+        }
+        std::string content;
+        std::cin.ignore(); // Clear the newline
+        std::cout << "Enter content (end with EOF): " << std::endl;
+        while (std::getline(std::cin, content)) {
+            outfile << content << std::endl;
+        }
+        outfile.close();
+        std::cout << "File created successfully: " << filename << std::endl;
+    }
+
+    void openFile() {
+        std::string filename;
+        std::cout << "Enter the name of the file to open: ";
+        std::cin >> filename;
+        std::ifstream infile(filename);
+        if (!infile) {
+            std::cerr << "Error opening file: " << filename << std::endl;
+            return;
+        }
+        std::string line;
+        std::cout << "--- Content of " << filename << " ---" << std::endl;
+        while (std::getline(infile, line)) {
+            std::cout << line << std::endl;
+        }
+        infile.close();
+    }
+};
+
+int main() {
+    try {
+        Notepad notepad;
+        notepad.run();
+    } catch (const std::exception& e) {
+        std::cerr << "An error occurred: " << e.what() << std::endl;
+    }
+    return 0;
+}
